@@ -1,0 +1,17 @@
+import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { Pencil, Trash2, ArrowUpRight, Plus, FileText } from 'lucide-react'
+import { deletePost, getPostsByUser } from '../api/posts'
+import { useAuth } from '../context/AuthContext'
+import { API_BASE_URL } from '../api/client'
+
+const DEFAULT_IMAGES=['default.png','Default.png',null,undefined,'']
+export default function Dashboard(){
+ const {user}=useAuth(); const [posts,setPosts]=useState([]); const [loading,setLoading]=useState(true)
+ useEffect(()=>{getPostsByUser(user.id).then(setPosts).finally(()=>setLoading(false))},[user.id])
+ const del=async id=>{if(!window.confirm('Delete this post?'))return;await deletePost(id);setPosts(p=>p.filter(x=>x.postId!==id))}
+ return <div className="site-shell py-12 sm:py-16"><div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-accent">Creator studio</p><h1 className="mt-2 font-display text-4xl font-bold">Your stories</h1><p className="mt-2 text-ink/50">Welcome back, {user.name}. Here is everything you've published.</p></div><Link to="/write" className="primary-btn w-fit"><Plus size={17}/> New story</Link></div>
+ <div className="mt-8 grid gap-4 sm:grid-cols-3"><div className="soft-card p-5"><FileText size={18} className="text-accent"/><p className="mt-4 text-3xl font-bold">{posts.length}</p><p className="text-sm text-ink/45">Published stories</p></div><div className="soft-card p-5"><p className="text-xs font-bold uppercase tracking-widest text-ink/35">Account</p><p className="mt-4 truncate font-semibold">{user.email}</p><p className="text-sm text-ink/45">Writer</p></div><div className="soft-card p-5"><p className="text-xs font-bold uppercase tracking-widest text-ink/35">Next step</p><p className="mt-4 font-semibold">Share your knowledge</p><Link to="/write" className="mt-1 inline-flex text-sm text-accent">Write a story <ArrowUpRight size={14}/></Link></div></div>
+ <div className="mt-10"><h2 className="font-display text-2xl font-bold">Published</h2>{loading?<div className="mt-5 h-24 animate-pulse rounded-2xl bg-ink/5"/>:posts.length===0?<div className="soft-card mt-5 px-6 py-14 text-center"><h3 className="font-display text-2xl font-bold">Your first story starts here.</h3><p className="mt-2 text-ink/45">Share something you've learned.</p><Link to="/write" className="primary-btn mt-5">Start writing</Link></div>:<div className="mt-5 space-y-3">{posts.map(p=><div key={p.postId} className="group flex items-center gap-4 rounded-2xl border border-ink/10 bg-white/70 p-3 transition hover:shadow-md"><div className="h-16 w-20 shrink-0 overflow-hidden rounded-xl bg-ink/5">{!DEFAULT_IMAGES.includes(p.imageName)&&<img src={`${API_BASE_URL}/images/${p.imageName}`} className="h-full w-full object-cover" alt=""/>}</div><Link to={`/post/${p.postId}`} className="min-w-0 flex-1"><p className="truncate font-display text-lg font-bold group-hover:text-accent">{p.title}</p><p className="mt-1 text-xs text-ink/40">{p.category?.categoryTitle||'Story'} · {p.publishDate?new Date(p.publishDate).toLocaleDateString():''}</p></Link><div className="flex shrink-0 items-center gap-1"><Link title="Edit" to={`/post/${p.postId}/edit`} className="rounded-full p-2 text-ink/45 hover:bg-ink/5 hover:text-accent"><Pencil size={16}/></Link><button title="Delete" onClick={()=>del(p.postId)} className="rounded-full p-2 text-ink/45 hover:bg-red-50 hover:text-red-600"><Trash2 size={16}/></button></div></div>)}</div>}</div>
+ </div>
+}
